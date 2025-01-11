@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header";
 import StoreProvider from "./StoreProvider";
 import { Toaster } from "@/components/ui/sonner";
+import UserDetailsWrapper from "@/components/user-details";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -34,13 +35,15 @@ export default function RootLayout({ children }) {
             enableSystem
             disableTransitionOnChange
           >
-            <div className="w-full min-h-screen flex flex-col justify-center items-center overflow-x-hidden">
-              <Header />
-              <main className="w-full flex-1 flex justify-center items-center my-6">
-                {children}
-              </main>
-            </div>
-            <Toaster />
+            <UserDetailsWrapper>
+              <div className="w-full min-h-screen flex flex-col justify-center items-center overflow-x-hidden">
+                <Header />
+                <main className="w-full flex-1 flex justify-center items-center my-6">
+                  {children}
+                </main>
+              </div>
+            </UserDetailsWrapper>
+            <Toaster richColors />
           </ThemeProvider>
         </StoreProvider>
         </body>

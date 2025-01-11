@@ -91,6 +91,10 @@ initialState: {
     userInfoStatus: "idle",
     userInfoError: {},
 
+    logout: { data: {} },
+    logoutStatus: "idle",
+    logoutError: {},
+
     userDetails: { data: {} },
     userDetailsStatus: "idle",
     userDetailsError: {},
@@ -109,6 +113,20 @@ extraReducers: (builder) => {
     .addCase(fetchLogin.rejected, (state, action) => {
         state.userInfoStatus = "failed";
         state.userInfoError = action.payload || "Login failed";
+    })
+
+    // logout
+    .addCase(fetchLogout.pending, (state) => {
+        state.logoutStatus = "loading";
+    })
+    .addCase(fetchLogout.fulfilled, (state, action) => {
+        state.logoutStatus = "succeeded";
+        state.logout = action.payload;
+        state.userInfo = null;
+    })
+    .addCase(fetchLogout.rejected, (state, action) => {
+        state.logoutStatus = "failed";
+        state.logoutError = action.payload || "Logout failed";
     })
 
     // user details
