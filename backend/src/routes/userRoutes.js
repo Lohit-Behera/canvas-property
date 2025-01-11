@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { login, logout, userDetails } from "../controllers/userController.js";
+import { login, logout, userDetails, googleAuth } from "../controllers/userController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const userRouter = Router();
 
 userRouter.post("/login", login);
+userRouter.post("/auth/google", googleAuth);
 userRouter.get("/logout", authMiddleware, logout);
 userRouter.get("/details", authMiddleware, userDetails);
 

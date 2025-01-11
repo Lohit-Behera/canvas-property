@@ -1,7 +1,8 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/userModel.js";
-
+import { oAuth2Client } from "../utils/googleConfig.js";
+import axios from "axios";
 
 // generate access token and refresh token
 const generateTokens = async (userId, res) => {
@@ -120,4 +121,131 @@ const logout = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, user, "User found successfully."));
   });
 
-export { login, logout, userDetails };
+// google auth
+const googleAuth = asyncHandler(async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token || typeof token !== "string") {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(400, {}, "Token is required and must be a string")
+        );
+    }
+
+    const googleRes = await oAuth2Client.getToken(token);
+    oAuth2Client.setCredentials(googleRes.tokens);
+
+    if (!googleRes.tokens.access_token) {
+      return res
+        .status(500)
+        .json(
+          new ApiResponse(
+            500,
+            {},
+            "Something went wrong while generating access token"
+          )
+        );
+    }
+
+    const userRes = await axios.get(
+      `https://www.googleapis.com/oauth2/v3/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
+    );
+
+    if (!userRes.data) {
+      return res
+        .status(500)
+        .json(
+          new ApiResponse(
+            500,
+            {},
+            "Something went wrong while fetching user details"
+          )
+        );
+    }
+
+    const { email, name } = userRes.data;
+
+    if (!email || !name) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, "Email, name, picture are not found"));
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      const user = await User.create({
+        email,
+        name,
+        password: Math.random().toString(36).slice(-8),
+      });
+      // generate tokens
+      const tokens = await generateTokens(user._id, res);
+      if (!tokens) {
+        return; // Exit if tokens generation failed
+      }
+      const { accessToken, refreshToken } = tokens;
+
+      const loggedInUser = await User.findById(user._id).select(
+        "-password -avatar -createdAt -updatedAt -__v"
+      );
+
+      // send response
+      return res
+        .status(200)
+        .cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 24 * 60 * 60 * 1000,
+        })
+        .cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 60 * 24 * 60 * 60 * 1000,
+        })
+        .json(
+          new ApiResponse(200, loggedInUser, "Sign up successful with google")
+        );
+    } else {
+      // generate tokens
+      const tokens = await generateTokens(user._id, res);
+      if (!tokens) {
+        return; // Exit if tokens generation failed
+      }
+      const { accessToken, refreshToken } = tokens;
+      const loggedInUser = await User.findById(user._id).select(
+        "-password -avatar -createdAt -updatedAt -__v"
+      );
+
+      // send response
+      return res
+        .status(200)
+        .cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 24 * 60 * 60 * 1000,
+        })
+        .cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 60 * 24 * 60 * 60 * 1000,
+        })
+        .json(
+          new ApiResponse(200, loggedInUser, "Sign in successful with google")
+        );
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, "Something went wrong with google"));
+  }
+});
+
+export { login, logout, userDetails, googleAuth };

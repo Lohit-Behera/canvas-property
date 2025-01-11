@@ -81,6 +81,37 @@ export const fetchUserDetails = createAsyncThunk(
     }
   }
 )
+
+export const fetchGoogleAuth = createAsyncThunk(
+  "user/googleAuth",
+  async (token, { rejectWithValue }) => {
+    try {
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      };
+      const { data } = await axios.post(
+        `${baseUrl}/api/users/auth/google`,
+        { token },
+        config
+      );
+      if (data.data) {
+        document.cookie = `userInfoCanvasProperty=${encodeURIComponent(
+          JSON.stringify(data.data)
+        )}; path=/; max-age=${30 * 24 * 60 * 60}; secure;`;
+      }
+      return data.data;
+    } catch (error) {
+      const errorMessage =
+        error.response && error.response.data
+          ? error.response.data.message
+          : error.message;
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
   
 const userInfoCookie = getCookie("userInfoCanvasProperty");
 
@@ -98,6 +129,10 @@ initialState: {
     userDetails: { data: {} },
     userDetailsStatus: "idle",
     userDetailsError: {},
+
+    googleAuth: {},
+    googleAuthStatus: "idle",
+    googleAuthError: {},
 },
 reducers: {
 },
@@ -140,6 +175,20 @@ extraReducers: (builder) => {
     .addCase(fetchUserDetails.rejected, (state, action) => {
         state.userDetailsStatus = "failed";
         state.userDetailsError = action.payload || "Failed to get user details";
+    })
+
+    // google auth
+    .addCase(fetchGoogleAuth.pending, (state) => {
+        state.googleAuthStatus = "loading";
+    })
+    .addCase(fetchGoogleAuth.fulfilled, (state, action) => {
+        state.googleAuthStatus = "succeeded";
+        state.googleAuth = action.payload;
+        state.userInfo = action.payload;
+    })
+    .addCase(fetchGoogleAuth.rejected, (state, action) => {
+        state.googleAuthStatus = "failed";
+        state.googleAuthError = action.payload || "Failed to get user details";
     })
 },
 });
