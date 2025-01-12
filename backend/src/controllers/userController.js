@@ -135,42 +135,18 @@ const googleAuth = asyncHandler(async (req, res) => {
     }
 
     const googleRes = await oAuth2Client.getToken(token);
-    oAuth2Client.setCredentials(googleRes.tokens);
-
-    if (!googleRes.tokens.access_token) {
-      return res
-        .status(500)
-        .json(
-          new ApiResponse(
-            500,
-            {},
-            "Something went wrong while generating access token"
-          )
-        );
-    }
-
-    const userRes = await axios.get(
-      `https://www.googleapis.com/oauth2/v3/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
-    );
-
-    if (!userRes.data) {
-      return res
-        .status(500)
-        .json(
-          new ApiResponse(
-            500,
-            {},
-            "Something went wrong while fetching user details"
-          )
-        );
-    }
-
-    const { email, name } = userRes.data;
+    const ticket = await oAuth2Client.verifyIdToken({
+      idToken: googleRes.tokens.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    
+    const { email, name } = payload;
 
     if (!email || !name) {
       return res
         .status(404)
-        .json(new ApiResponse(404, {}, "Email, name, picture are not found"));
+        .json(new ApiResponse(404, {}, "Email or name are not found"));
     }
 
     const user = await User.findOne({ email });
