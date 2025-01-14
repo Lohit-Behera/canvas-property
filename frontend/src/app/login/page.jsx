@@ -27,7 +27,6 @@ import PasswordInput from "@/components/password-input";
 import { toast } from "sonner";
 import { fetchLogin, fetchGoogleAuth } from "@/lib/features/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 
 const loginFormSchema = z.object({
   email: z.string().email(),

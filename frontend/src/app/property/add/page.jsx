@@ -1,0 +1,304 @@
+"use client";
+
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import { toast } from "sonner";
+import { fetchCreateProperty } from "@/lib/features/propertySlice";
+
+const allPropertyType = ["Residential", "Commercial", "Industrial", "Land"];
+
+const propertySchema = z.object({
+  title: z
+    .string()
+    .min(3, { message: "Title must be at least 3 characters" })
+    .max(50, "Title must be at most 50 characters"),
+  description: z
+    .string()
+    .min(10, { message: "Description must be at least 10 characters" })
+    .max(500, "Description must be at most 500 characters"),
+  price: z
+    .number()
+    .positive({ message: "Amount must be a positive number" })
+    .min(1, { message: "Amount must be at least 1" }),
+  size: z
+    .number()
+    .positive({ message: "Size must be a positive number" })
+    .min(1, { message: "Size must be at least 1" }),
+  propertyType: z.string(),
+  address: z
+    .string()
+    .min(3, { message: "Address must be at least 3 characters" })
+    .max(50, "Address must be at most 50 characters"),
+  postalCode: z
+    .string()
+    .min(3, { message: "Postal Code must be at least 3 characters" })
+    .max(10, "Postal Code must be at most 10 characters"),
+  thumbnail: z
+    .any()
+    .refine((file) => file instanceof File, {
+      message: "Thumbnail is required.",
+    })
+    .refine((file) => file?.size <= 3 * 1024 * 1024, {
+      message: "Thumbnail size must be less than 3MB.",
+    })
+    .refine((file) => ["image/jpeg", "image/png"].includes(file?.type), {
+      message: "Only .jpg and .png formats are supported.",
+    }),
+  bigImage: z
+    .any()
+    .refine((file) => file instanceof File, {
+      message: "Thumbnail is required.",
+    })
+    .refine((file) => file?.size <= 3 * 1024 * 1024, {
+      message: "Thumbnail size must be less than 3MB.",
+    })
+    .refine((file) => ["image/jpeg", "image/png"].includes(file?.type), {
+      message: "Only .jpg and .png formats are supported.",
+    }),
+});
+
+function AddProperty() {
+  const dispatch = useDispatch();
+  const form = useForm({
+    resolver: zodResolver(propertySchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      price: undefined,
+      size: undefined,
+      propertyType: "",
+      address: "",
+      postalCode: "",
+      thumbnail: undefined,
+      bigImage: undefined,
+    },
+  });
+
+  function handleSubmit(data) {
+    const addPropertyPromise = dispatch(fetchCreateProperty(data)).unwrap();
+    toast.promise(addPropertyPromise, {
+      loading: "Adding property...",
+      success: (data) => {
+        return data.message || "Property added successfully";
+      },
+      error: (error) => {
+        return (
+          error ||
+          error.message ||
+          "Failed to add property. Please try again later."
+        );
+      },
+    });
+  }
+  return (
+    <Card className="w-full md:w-[90%]">
+      <CardHeader>
+        <CardTitle>Add Property</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Description" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      placeholder="Amount"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="size"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Size</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      placeholder="Amount"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <FormDescription>Size in square meters</FormDescription>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="propertyType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Property Type</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a property type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allPropertyType.map((propertyType) => (
+                          <SelectItem key={propertyType} value={propertyType}>
+                            {propertyType}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="postalCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Postal Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Postal Code" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="thumbnail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Thumbnail</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      onChange={(e) =>
+                        field.onChange(e.target.files?.[0] || null)
+                      }
+                      placeholder="Thumbnail"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bigImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Big Image</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      onChange={(e) =>
+                        field.onChange(e.target.files?.[0] || null)
+                      }
+                      placeholder="Thumbnail"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button className="w-full" size="sm" type="submit">
+              Submit
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default AddProperty;

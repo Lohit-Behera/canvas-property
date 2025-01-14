@@ -2,7 +2,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/userModel.js";
 import { oAuth2Client } from "../utils/googleConfig.js";
-import axios from "axios";
 
 // generate access token and refresh token
 const generateTokens = async (userId, res) => {
