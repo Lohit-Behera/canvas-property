@@ -8,7 +8,7 @@ function isTokenExpired(token) {
   try {
     const decoded = jwt.decode(token);
     const currentTime = Math.floor(Date.now() / 1000);
-    return decoded.exp < currentTime; // Add non-null assertion as decoded.exp might be undefined
+    return decoded.exp < currentTime;
   } catch (err) {
     return true;
   }
@@ -28,15 +28,13 @@ export const authMiddleware = asyncHandler(
 
         // Check if refresh token is missing
         if (!refreshToken) {
-          const user = await User.findById(
-            JSON.parse(req.cookies.userInfoBlog)._id
-          );
-          if (!user) {
+          const userInfoCanvasProperty = JSON.parse(req.cookies.userInfoCanvasProperty);
+          if (!userInfoCanvasProperty) {
             return res
               .status(401)
               .json(new ApiResponse(401, {}, "Invalid token"));
           }
-          refreshToken = user.refreshToken || "";
+          refreshToken = userInfoCanvasProperty.refreshToken;
         }
 
         // Check if the refresh token is expired
@@ -61,21 +59,13 @@ export const authMiddleware = asyncHandler(
             .json(new ApiResponse(401, {}, "Invalid token"));
         }
 
-        // Generate new access and refresh tokens
+        // Generate new access
         const newAccessToken = user.generateAccessToken();
         res.cookie("accessToken", newAccessToken, {
           httpOnly: true,
           secure: true,
           sameSite: "none",
-          maxAge: 24 * 60 * 60 * 1000, // 1 day
-        });
-
-        const newRefreshToken = user.generateRefreshToken();
-        res.cookie("refreshToken", newRefreshToken, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "none",
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          maxAge: 10 * 60 * 1000, // 10 minutes
         });
 
         token = newAccessToken; // Update token to new access token

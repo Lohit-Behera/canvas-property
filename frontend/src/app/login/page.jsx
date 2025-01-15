@@ -2,7 +2,7 @@
 
 import { useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -27,6 +27,7 @@ import PasswordInput from "@/components/password-input";
 import { toast } from "sonner";
 import { fetchLogin, fetchGoogleAuth } from "@/lib/features/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
+import { useDispatchWithToast } from "@/hooks/dispatch";
 
 const loginFormSchema = z.object({
   email: z.string().email(),
@@ -35,7 +36,6 @@ const loginFormSchema = z.object({
   }),
 });
 function Login() {
-  const dispatch = useDispatch();
   const router = useRouter();
 
   const userInfo = useSelector((state) => state.user.userInfo);
@@ -54,20 +54,31 @@ function Login() {
     },
   });
 
+  const login = useDispatchWithToast(fetchLogin, {
+    loadingMessage: "Logging in...",
+    getSuccessMessage: (data) => data.message || "Logged in successfully",
+    getErrorMessage: (error) =>
+      error.message || error || "Something went wrong while logging in",
+    onSuccess: () => {
+      form.reset();
+      router.push("/");
+    },
+  });
+
   function onSubmit(values) {
-    const loginPromise = dispatch(fetchLogin(values)).unwrap();
-    toast.promise(loginPromise, {
-      loading: "Logging in...",
-      success: (data) => {
-        return data.message || "Logged in successfully";
-      },
-      error: (error) => {
-        return (
-          error || error.message || "Something went wrong while logging in"
-        );
-      },
-    });
+    login(values);
   }
+
+  const loginWithGoogle = useDispatchWithToast(fetchGoogleAuth, {
+    loadingMessage: "Logging in...",
+    getSuccessMessage: (data) => data.message || "Logged in successfully",
+    getErrorMessage: (error) =>
+      error.message || error || "Something went wrong while logging in",
+    onSuccess: () => {
+      form.reset();
+      router.push("/");
+    },
+  });
 
   const responseGoogle = (authResponse) => {
     try {
@@ -75,21 +86,7 @@ function Login() {
         toast.error("Failed to Sign Up with Google. Please try again later.");
         return;
       }
-      const googlePromise = dispatch(
-        fetchGoogleAuth(authResponse.code)
-      ).unwrap();
-      toast.promise(googlePromise, {
-        loading: "Logging in...",
-        success: (data) => {
-          form.reset();
-          navigate("/");
-          return data.message || "Login successful";
-        },
-        error: (error) => {
-          console.log("google error", error);
-          return error.message || "Error logging in.";
-        },
-      });
+      loginWithGoogle(authResponse.code);
     } catch (error) {
       toast.error("Failed to Sign Up with Google. Please try again later.");
     }

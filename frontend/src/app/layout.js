@@ -5,7 +5,6 @@ import Header from "@/components/header";
 import StoreProvider from "./StoreProvider";
 import { Toaster } from "@/components/ui/sonner";
 import UserDetailsWrapper from "@/components/user-details";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

@@ -14,10 +14,6 @@ const generateTokens = async (userId, res) => {
   
       const accessToken = user.generateAccessToken();
       const refreshToken = user.generateRefreshToken();
-  
-      user.refreshToken = refreshToken;
-      await user.save({ validateBeforeSave: false });
-  
       return { accessToken, refreshToken };
     } catch (error) {
       console.log(error);
@@ -76,13 +72,13 @@ const login = asyncHandler(async (req, res) => {
         httpOnly: true,
         secure: true,
         sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 10 * 60 * 1000,
       })
       .cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: true,
         sameSite: "none",
-        maxAge: 60 * 24 * 60 * 60 * 1000,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       })
       .json(new ApiResponse(200, updatedUser, "Login successful."));
   });
@@ -174,13 +170,13 @@ const googleAuth = asyncHandler(async (req, res) => {
           httpOnly: true,
           secure: true,
           sameSite: "none",
-          maxAge: 24 * 60 * 60 * 1000,
+          maxAge: 10 * 60 * 1000,
         })
         .cookie("refreshToken", refreshToken, {
           httpOnly: true,
           secure: true,
           sameSite: "none",
-          maxAge: 60 * 24 * 60 * 60 * 1000,
+          maxAge: 30 * 24 * 60 * 60 * 1000,
         })
         .json(
           new ApiResponse(200, loggedInUser, "Sign up successful with google")
@@ -203,13 +199,13 @@ const googleAuth = asyncHandler(async (req, res) => {
           httpOnly: true,
           secure: true,
           sameSite: "none",
-          maxAge: 24 * 60 * 60 * 1000,
+          maxAge: 10 * 60 * 1000,
         })
         .cookie("refreshToken", refreshToken, {
           httpOnly: true,
           secure: true,
           sameSite: "none",
-          maxAge: 60 * 24 * 60 * 60 * 1000,
+          maxAge: 30 * 24 * 60 * 60 * 1000,
         })
         .json(
           new ApiResponse(200, loggedInUser, "Sign in successful with google")

@@ -1,18 +1,13 @@
 "use client";
 
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
+import { withAuth } from "@/components/withAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -31,8 +26,8 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { toast } from "sonner";
 import { fetchCreateProperty } from "@/lib/features/propertySlice";
+import { useDispatchWithToast } from "@/hooks/dispatch";
 
 const allPropertyType = ["Residential", "Commercial", "Industrial", "Land"];
 
@@ -87,7 +82,7 @@ const propertySchema = z.object({
 });
 
 function AddProperty() {
-  const dispatch = useDispatch();
+  const router = useRouter();
   const form = useForm({
     resolver: zodResolver(propertySchema),
     defaultValues: {
@@ -103,21 +98,21 @@ function AddProperty() {
     },
   });
 
+  const createProperty = useDispatchWithToast(fetchCreateProperty, {
+    loadingMessage: "Adding property...",
+    getSuccessMessage: (data) => data.message || "Property added successfully",
+    getErrorMessage: (error) =>
+      error?.message ||
+      error ||
+      "Failed to add property. Please try again later.",
+    onSuccess: () => {
+      form.reset();
+      router.push("/");
+    },
+  });
+
   function handleSubmit(data) {
-    const addPropertyPromise = dispatch(fetchCreateProperty(data)).unwrap();
-    toast.promise(addPropertyPromise, {
-      loading: "Adding property...",
-      success: (data) => {
-        return data.message || "Property added successfully";
-      },
-      error: (error) => {
-        return (
-          error ||
-          error.message ||
-          "Failed to add property. Please try again later."
-        );
-      },
-    });
+    createProperty(data);
   }
   return (
     <Card className="w-full md:w-[90%]">
@@ -301,4 +296,4 @@ function AddProperty() {
   );
 }
 
-export default AddProperty;
+export default withAuth(AddProperty);

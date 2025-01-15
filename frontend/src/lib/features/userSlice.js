@@ -135,6 +135,10 @@ initialState: {
     googleAuthError: {},
 },
 reducers: {
+  reLogin: (state) => {
+    document.cookie = `userInfoCanvasProperty=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+    state.userInfo = null;
+  }
 },
 extraReducers: (builder) => {
     builder
@@ -193,5 +197,6 @@ extraReducers: (builder) => {
 },
 });
 
+export const { reLogin } = userSlice.actions;
 export default userSlice.reducer;
   

@@ -1,18 +1,18 @@
 "use client";
 
 import { withAuth } from "@/components/withAuth";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { fetchGetAllProperties } from "@/lib/features/propertySlice";
 import { useEffect } from "react";
+import { useAsyncDispatch } from "@/hooks/dispatch";
 
 function Home() {
-  const dispatch = useDispatch();
-
   const properties = useSelector(
     (state) => state.property.getAllProperties.data
   )
+  const fetchProperties = useAsyncDispatch(fetchGetAllProperties);
   useEffect(() => {
-    dispatch(fetchGetAllProperties());
+    fetchProperties();
   }, []);
   return (
    <div className="p-4 rounded-md border w-full md:w-[95%] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -19,6 +19,7 @@ function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const userInfo = useSelector((state) => state.user.userInfo);
+  const userDetailsError = useSelector((state) => state.user.userDetailsError);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -32,31 +33,37 @@ function Header() {
             <h1 className="text-2xl font-bold">Logo</h1>
           </Link>
           <div className="flex space-x-2">
-            {userInfo ? (
+            {userDetailsError !== "Refresh token expired" && (
               <>
-                <Button
-                  variant={pathname === "/property/add" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => router.push("/property/add")}
-                >
-                  Add Property
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => dispatch(fetchLogout())}
-                >
-                  Logout
-                </Button>
+                {userInfo ? (
+                  <>
+                    <Button
+                      variant={
+                        pathname === "/property/add" ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => router.push("/property/add")}
+                    >
+                      Add Property
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => dispatch(fetchLogout())}
+                    >
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant={pathname === "/login" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => router.push("/login")}
+                  >
+                    Login
+                  </Button>
+                )}
               </>
-            ) : (
-              <Button
-                variant={pathname === "/login" ? "default" : "outline"}
-                size="sm"
-                onClick={() => router.push("/login")}
-              >
-                Login
-              </Button>
             )}
             <ModeToggle />
           </div>
