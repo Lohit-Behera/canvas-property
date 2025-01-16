@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/userModel.js";
 import { oAuth2Client } from "../utils/googleConfig.js";
+import axios from "axios";
 
 // generate access token and refresh token
 const generateTokens = async (userId, res) => {
@@ -219,4 +220,93 @@ const googleAuth = asyncHandler(async (req, res) => {
   }
 });
 
-export { login, logout, userDetails, googleAuth };
+// facebook auth
+const facebookAuth = asyncHandler(async (req, res) => {
+    const { token } = req.body;
+    if (!token || typeof token !== "string") {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(400, {}, "Token is required and must be a string")
+        );
+    }
+    // verify token
+    const tokenValidationUrl = `https://graph.facebook.com/debug_token?input_token=${token}&access_token=${process.env.FACEBOOK_APP_ID}|${process.env.FACEBOOK_APP_SECRET}`;
+    const validationResponse = await axios.get(tokenValidationUrl);
+
+    if (!validationResponse.data.data.is_valid) {
+      throw new Error('Invalid Facebook token.');
+    }
+
+    // Fetch user details (id, name, email)
+    const userInfoUrl = `https://graph.facebook.com/me?fields=id,name,email&access_token=${token}`;
+    const userInfoResponse = await axios.get(userInfoUrl);
+    console.log(userInfoResponse.data);
+    // check if user exists
+    const user = await User.findOne({ fbId: userInfoResponse.data.id });
+
+    if (!user) {
+      const user = await User.create({
+        fbId: userInfoResponse.data.id,
+        email: userInfoResponse.data.email,
+        name: userInfoResponse.data.name,
+        password: Math.random().toString(36).slice(-8),
+      });
+      // generate tokens
+      const tokens = await generateTokens(user._id, res);
+      if (!tokens) {
+        return; // Exit if tokens generation failed
+      }
+      const { accessToken, refreshToken } = tokens;
+      const loggedInUser = await User.findById(user._id).select(
+        "-password -createdAt -updatedAt -__v"
+      );
+      
+      // send response
+      return res
+        .status(200)
+        .cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 10 * 60 * 1000,
+        })
+        .cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+        })
+        .json(new ApiResponse(200, loggedInUser, "Sign up successful with facebook"));
+      
+    } else {
+      // generate tokens
+      const tokens = await generateTokens(user._id, res);
+      if (!tokens) {
+        return res.status(500).json(new ApiResponse(500, null, "Something went wrong while generating tokens"));
+      }
+      const { accessToken, refreshToken } = tokens;
+      const loggedInUser = await User.findById(user._id).select(
+        "-password -createdAt -updatedAt -__v"
+      );
+      
+      // send response
+      return res
+        .status(200)
+        .cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 10 * 60 * 1000,
+        })
+        .cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+        })
+        .json(new ApiResponse(200, loggedInUser, "Login successful with facebook"));
+    }
+  });
+
+export { login, logout, userDetails, googleAuth, facebookAuth };

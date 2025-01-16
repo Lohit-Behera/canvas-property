@@ -25,9 +25,15 @@ import {
 } from "@/components/ui/form";
 import PasswordInput from "@/components/password-input";
 import { toast } from "sonner";
-import { fetchLogin, fetchGoogleAuth } from "@/lib/features/userSlice";
+import {
+  fetchLogin,
+  fetchGoogleAuth,
+  fetchFacebookAuth,
+} from "@/lib/features/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useDispatchWithToast } from "@/hooks/dispatch";
+import FacebookLogin from "@greatsumini/react-facebook-login";
+import { Facebook, LogIn } from "lucide-react";
 
 const loginFormSchema = z.object({
   email: z.string().email(),
@@ -98,8 +104,20 @@ function Login() {
     flow: "auth-code",
   });
 
-  const handleLoginError = (err) => {
-    console.log("Login Failed");
+  const facebookLogin = useDispatchWithToast(fetchFacebookAuth, {
+    loadingMessage: "Logging in...",
+    getSuccessMessage: (data) => data.message || "Logged in successfully",
+    getErrorMessage: (error) =>
+      error.message || error || "Something went wrong while logging in",
+    onSuccess: () => {
+      form.reset();
+      router.push("/");
+    },
+  });
+
+  const handleFacebookLogin = (res) => {
+    console.log("Login Success!", res);
+    facebookLogin(res.accessToken);
   };
   return (
     <Card className="mx-auto max-w-sm">
@@ -139,6 +157,7 @@ function Login() {
               )}
             />
             <Button className="w-full" size="sm" type="submit">
+              <LogIn className="mr-2 h-4 w-4" />
               Login
             </Button>
           </form>
@@ -159,6 +178,32 @@ function Login() {
           </svg>
           Login with Google
         </Button>
+        <FacebookLogin
+          appId={process.env.NEXT_PUBLIC_FB_APP_ID}
+          onSuccess={(response) => {
+            handleFacebookLogin(response);
+          }}
+          onFail={(error) => {
+            toast.error(error.status);
+          }}
+          onProfileSuccess={(response) => {
+            console.log("Get Profile Success!", response);
+          }}
+          render={({ onClick, logout }) => (
+            <Button
+              variant="outline"
+              className="w-full"
+              size="sm"
+              onClick={onClick}
+            >
+              <Facebook
+                strokeWidth={0.75}
+                className="mr-2 h-4 w-4 fill-foreground"
+              />
+              Login with Facebook
+            </Button>
+          )}
+        />
       </CardContent>
     </Card>
   );

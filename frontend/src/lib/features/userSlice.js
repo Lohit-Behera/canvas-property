@@ -112,6 +112,37 @@ export const fetchGoogleAuth = createAsyncThunk(
     }
   }
 );
+
+export const fetchFacebookAuth = createAsyncThunk(
+  "user/facebookAuth",
+  async (token, { rejectWithValue }) => {
+    try {
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      };
+      const { data } = await axios.post(
+        `${baseUrl}/api/users/auth/facebook`,
+        { token },
+        config
+      );
+      if (data.data) {
+        document.cookie = `userInfoCanvasProperty=${encodeURIComponent(
+          JSON.stringify(data.data)
+        )}; path=/; max-age=${30 * 24 * 60 * 60}; secure;`;
+      }
+      return data.data;
+    } catch (error) {
+      const errorMessage =
+        error.response && error.response.data
+          ? error.response.data.message
+          : error.message;
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
   
 const userInfoCookie = getCookie("userInfoCanvasProperty");
 
@@ -133,6 +164,10 @@ initialState: {
     googleAuth: {},
     googleAuthStatus: "idle",
     googleAuthError: {},
+
+    facebookAuth: {},
+    facebookAuthStatus: "idle",
+    facebookAuthError: {},
 },
 reducers: {
   reLogin: (state) => {
@@ -193,6 +228,20 @@ extraReducers: (builder) => {
     .addCase(fetchGoogleAuth.rejected, (state, action) => {
         state.googleAuthStatus = "failed";
         state.googleAuthError = action.payload || "Failed to get user details";
+    })
+
+    // facebook auth
+    .addCase(fetchFacebookAuth.pending, (state) => {
+        state.facebookAuthStatus = "loading";
+    })
+    .addCase(fetchFacebookAuth.fulfilled, (state, action) => {
+        state.facebookAuthStatus = "succeeded";
+        state.facebookAuth = action.payload;
+        state.userInfo = action.payload;
+    })
+    .addCase(fetchFacebookAuth.rejected, (state, action) => {
+        state.facebookAuthStatus = "failed";
+        state.facebookAuthError = action.payload || "Failed to get user details";
     })
 },
 });
