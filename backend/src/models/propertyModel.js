@@ -2,6 +2,11 @@ import mongoose, { Schema } from "mongoose";
 
 const propertySchema = new Schema(
     {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
         title: {
             type: String,
             required: true,
@@ -18,10 +23,12 @@ const propertySchema = new Schema(
             type: Number,
             required: true,
         },
-        propertyType: {
+        category: {
             type: String,
             required: true,
-            enum: ["Residential", "Commercial", "Industrial", "Land"],
+        },
+        subCategory: {
+            type: String,
         },
         address: {
             type: String,
