@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { withAuth } from "@/components/withAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +27,9 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { fetchCreateProperty } from "@/lib/features/propertySlice";
-import { useDispatchWithToast } from "@/hooks/dispatch";
+import { useAsyncDispatch, useDispatchWithToast } from "@/hooks/dispatch";
+import { fetchGetAllCategories } from "@/lib/features/categorySlice";
+import { useSelector } from "react-redux";
 
 const allPropertyType = ["Residential", "Commercial", "Industrial", "Land"];
 
@@ -48,11 +50,13 @@ const propertySchema = z.object({
     .number()
     .positive({ message: "Size must be a positive number" })
     .min(1, { message: "Size must be at least 1" }),
-  propertyType: z.string(),
+  category: z.string(),
+  subCategory: z.string(),
   address: z
     .string()
     .min(3, { message: "Address must be at least 3 characters" })
     .max(50, "Address must be at most 50 characters"),
+  city: z.string(),
   postalCode: z
     .string()
     .min(3, { message: "Postal Code must be at least 3 characters" })
@@ -88,6 +92,17 @@ const propertySchema = z.object({
 
 function AddProperty() {
   const router = useRouter();
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  const categories = useSelector(
+    (state) => state.category.getAllCategories.data
+  );
+
+  const fetchCategories = useAsyncDispatch(fetchGetAllCategories);
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
   const form = useForm({
     resolver: zodResolver(propertySchema),
     defaultValues: {
@@ -95,13 +110,24 @@ function AddProperty() {
       description: "",
       price: undefined,
       size: undefined,
-      propertyType: "",
+      category: "",
+      subCategory: "",
       address: "",
+      city: "",
       postalCode: "",
       thumbnail: undefined,
       bigImage: undefined,
     },
   });
+
+  const handleCategoryChange = (category) => {
+    form.setValue("category", category);
+    form.setValue("subCategory", "");
+    setSelectedCategory(category);
+  };
+
+  const selectedSubcategories =
+    categories.find((cat) => cat.name === selectedCategory)?.subCategory || [];
 
   const createProperty = useDispatchWithToast(fetchCreateProperty, {
     loadingMessage: "Adding property...",
@@ -123,7 +149,9 @@ function AddProperty() {
     formData.append("description", data.description);
     formData.append("price", data.price);
     formData.append("size", data.size);
-    formData.append("propertyType", data.propertyType);
+    formData.append("category", data.category);
+    formData.append("subCategory", data.subCategory);
+    formData.append("city", data.city);
     formData.append("address", data.address);
     formData.append("postalCode", data.postalCode);
 
@@ -219,34 +247,70 @@ function AddProperty() {
                     />
                   </FormControl>
                   <FormMessage />
-                  <FormDescription>Size in square meters</FormDescription>
+                  <FormDescription>Size in square foot</FormDescription>
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="propertyType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Property Type</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a property type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {allPropertyType.map((propertyType) => (
-                          <SelectItem key={propertyType} value={propertyType}>
-                            {propertyType}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-2">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={handleCategoryChange}
+                        className="w-full"
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem
+                              key={category._id}
+                              value={category.name}
+                            >
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="subCategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sub Category</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a Subcategory" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectedSubcategories.map((sub) => (
+                            <SelectItem key={sub} value={sub}>
+                              {sub}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                    <FormDescription>
+                      Choose the category first, then the subcategory.
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="address"
@@ -255,6 +319,19 @@ function AddProperty() {
                   <FormLabel>Address</FormLabel>
                   <FormControl>
                     <Input placeholder="Address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="City" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

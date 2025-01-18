@@ -7,7 +7,7 @@ import { User } from "../models/userModel.js";
 
 const createProperty = asyncHandler(async (req, res) => {
   // get user from req.user
-  const user = User.findById(req.user._id);
+  const user = await User.findById(req.user._id);
   if (!user) {
     return res.status(404).json(new ApiResponse(404, null, "User not found"));
   }
@@ -78,7 +78,7 @@ const createProperty = asyncHandler(async (req, res) => {
   }
   return res
     .status(201)
-    .json(new ApiResponse(201, createdProperty, "Property created successfully"));
+    .json(new ApiResponse(201, "createdProperty", "Property created successfully"));
 })
 
 const getAllProperties = asyncHandler(async (req, res) => {
