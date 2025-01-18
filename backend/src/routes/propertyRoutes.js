@@ -6,7 +6,7 @@ import { resizeImage } from "../middlewares/resizeMiddleware.js";
 
 const propertyRouter = Router();
 
-propertyRouter.post("/create", authMiddleware, upload.fields([{ name: "thumbnail" }, { name: "bigImage" }]), resizeImage, createProperty);
+propertyRouter.post("/create", authMiddleware, upload.fields([{ name: "thumbnail", maxCount: 5 }, { name: "bigImage", maxCount: 1 }]), resizeImage, createProperty);
 propertyRouter.get("/all", authMiddleware, getAllProperties);
 
 export default propertyRouter;

@@ -19,7 +19,7 @@ function Home() {
     {properties.map((property) => (
       <div key={property._id} className="p-2 rounded-md border">
         <img
-          src={property.thumbnail}
+          src={property.thumbnail[0]}
           alt={property.title}
           className="w-full h-44 rounded-md object-cover"
         />

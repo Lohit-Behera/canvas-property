@@ -27,25 +27,21 @@ const createProperty = asyncHandler(async (req, res) => {
     const { title, description, price, size, propertyType, address, postalCode } = value;
 
     // get images from req.files
-    const thumbnail = req.files.thumbnail[0];
+    const thumbnails = req.files.thumbnail;
     const bigImage = req.files.bigImage[0];
 
     // validate images
-    if (!thumbnail || !bigImage) {
-      return res
-        .status(400)
-        .json(new ApiResponse(400, null, "Thumbnail and big image are required"));
+    if (!thumbnails || thumbnails.length === 0 || !bigImage) {
+      return res.status(400).json(new ApiResponse(400, null, "Thumbnails and big image are required"));
     }
 
     // upload images to cloudinary
-    const thumbnailUrl = await uploadFile(thumbnail);
+    const thumbnailUrls = await Promise.all(thumbnails.map(file => uploadFile(file)));
     const bigImageUrl = await uploadFile(bigImage);
 
     // validate uploaded images
-    if (!thumbnailUrl || !bigImageUrl) {
-      return res
-        .status(500)
-        .json(new ApiResponse(500, null, "Image upload failed"));
+    if (!thumbnailUrls.every(url => url) || !bigImageUrl) {
+      return res.status(500).json(new ApiResponse(500, null, "Image upload failed"));
     }
 
     // create property
@@ -57,7 +53,7 @@ const createProperty = asyncHandler(async (req, res) => {
       propertyType,
       address,
       postalCode,
-      thumbnail: thumbnailUrl,
+      thumbnail: thumbnailUrls,
       bigImage: bigImageUrl,
     });
 

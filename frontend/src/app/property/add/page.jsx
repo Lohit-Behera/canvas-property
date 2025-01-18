@@ -58,23 +58,28 @@ const propertySchema = z.object({
     .min(3, { message: "Postal Code must be at least 3 characters" })
     .max(10, "Postal Code must be at most 10 characters"),
   thumbnail: z
-    .any()
-    .refine((file) => file instanceof File, {
-      message: "Thumbnail is required.",
-    })
-    .refine((file) => file?.size <= 3 * 1024 * 1024, {
-      message: "Thumbnail size must be less than 3MB.",
-    })
-    .refine((file) => ["image/jpeg", "image/png"].includes(file?.type), {
-      message: "Only .jpg and .png formats are supported.",
-    }),
+    .array(
+      z
+        .any()
+        .refine((file) => file instanceof File, {
+          message: "Each thumbnail must be a file.",
+        })
+        .refine((file) => file?.size <= 3 * 1024 * 1024, {
+          message: "Each thumbnail size must be less than 3MB.",
+        })
+        .refine((file) => ["image/jpeg", "image/png"].includes(file?.type), {
+          message: "Only .jpg and .png formats are supported for thumbnails.",
+        })
+    )
+    .min(1, { message: "At least one thumbnail is required." })
+    .max(5, { message: "You can upload up to 5 thumbnails." }),
   bigImage: z
     .any()
     .refine((file) => file instanceof File, {
-      message: "Thumbnail is required.",
+      message: "Big image is required.",
     })
     .refine((file) => file?.size <= 3 * 1024 * 1024, {
-      message: "Thumbnail size must be less than 3MB.",
+      message: "Big image size must be less than 3MB.",
     })
     .refine((file) => ["image/jpeg", "image/png"].includes(file?.type), {
       message: "Only .jpg and .png formats are supported.",
@@ -112,7 +117,27 @@ function AddProperty() {
   });
 
   function handleSubmit(data) {
-    createProperty(data);
+    const formData = new FormData();
+
+    formData.append("title", data.title);
+    formData.append("description", data.description);
+    formData.append("price", data.price);
+    formData.append("size", data.size);
+    formData.append("propertyType", data.propertyType);
+    formData.append("address", data.address);
+    formData.append("postalCode", data.postalCode);
+
+    if (data.thumbnail) {
+      data.thumbnail.forEach((file) => {
+        formData.append("thumbnail", file);
+      });
+    }
+
+    if (data.bigImage) {
+      formData.append("bigImage", data.bigImage);
+    }
+
+    createProperty(formData);
   }
   return (
     <Card className="w-full md:w-[90%]">
@@ -257,10 +282,12 @@ function AddProperty() {
                   <FormControl>
                     <Input
                       type="file"
+                      multiple
+                      name="thumbnail"
                       onChange={(e) =>
-                        field.onChange(e.target.files?.[0] || null)
+                        field.onChange(Array.from(e.target.files || []))
                       }
-                      placeholder="Thumbnail"
+                      placeholder="Upload Thumbnails"
                     />
                   </FormControl>
                   <FormMessage />

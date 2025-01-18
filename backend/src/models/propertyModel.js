@@ -32,7 +32,7 @@ const propertySchema = new Schema(
             required: true,
         },
         thumbnail: {
-            type: String,
+            type: [String],
             required: true,
         },
         bigImage: {
