@@ -21,6 +21,7 @@ const createProperty = asyncHandler(async (req, res) => {
       category: Joi.string().required(),
       subCategory: Joi.string().optional(),
       address: Joi.string().required(),
+      city: Joi.string().required(),
       postalCode: Joi.string()
     });
 
@@ -32,7 +33,7 @@ const createProperty = asyncHandler(async (req, res) => {
       .json(new ApiResponse(400, null, error.details[0].message));
   }
 
-  const { title, description, price, size, category, subCategory, address, postalCode } = value;
+  const { title, description, price, size, category, subCategory, address, city, postalCode } = value;
 
   // get images from req.files
   const thumbnails = req.files.thumbnail;
@@ -62,6 +63,7 @@ const createProperty = asyncHandler(async (req, res) => {
     category,
     subCategory,
     address,
+    city,
     postalCode,
     thumbnail: thumbnailUrls,
     bigImage: bigImageUrl,
