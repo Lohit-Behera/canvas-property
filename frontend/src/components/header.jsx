@@ -39,6 +39,15 @@ function Header() {
                   <>
                     <Button
                       variant={
+                        pathname === "/category/add" ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => router.push("/category/add")}
+                    >
+                      Add Category
+                    </Button>
+                    <Button
+                      variant={
                         pathname === "/property/add" ? "default" : "outline"
                       }
                       size="sm"

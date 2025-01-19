@@ -35,6 +35,12 @@ const createProperty = asyncHandler(async (req, res) => {
 
   const { title, description, price, size, category, subCategory, address, city, postalCode } = value;
 
+  if (category === "New Project"){
+    if (user.role !== "admin") {
+      return res.status(403).json(new ApiResponse(403, null, "You are not authorized to create a new project"));
+    }
+  }
+
   // get images from req.files
   const thumbnails = req.files.thumbnail;
   const bigImage = req.files.bigImage[0];
@@ -78,7 +84,7 @@ const createProperty = asyncHandler(async (req, res) => {
   }
   return res
     .status(201)
-    .json(new ApiResponse(201, "createdProperty", "Property created successfully"));
+    .json(new ApiResponse(201, createdProperty, "Property created successfully"));
 })
 
 const getAllProperties = asyncHandler(async (req, res) => {
